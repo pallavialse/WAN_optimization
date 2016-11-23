@@ -1,0 +1,77 @@
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+
+
+int parse_is_terminator(char c)
+{
+	char *terminators="\n\r,.\"'{}<>[]();?!:@~`#$%^*+-&/\\=";
+	char *ptr;
+	
+	if(c=='\0')
+		return 1;
+	
+	
+	for(ptr=terminators;*ptr!='\0';ptr++)
+		if(c==*ptr)
+			return 1;
+		return 0;
+}
+
+int parse_is_delimiter(char c)
+{
+	if(c=='\0' || c==' ' || c=='\t' || parse_is_terminator(c))
+		return 1;
+	
+	return 0;
+}
+/*TODO :HANDLE TERMINATORS BETWEEN WORDS IN A PHRASE WHILE PARSING AND RETURN FAILURE */
+static int parse_one_word(const char *inbuf,int inbufLen)
+{	
+
+	const char* origbuf=inbuf;
+	while( (inbufLen>0) && !(parse_is_delimiter(*inbuf))) {
+		inbuf++;
+		inbufLen--;
+	}
+	if(inbufLen == 0){
+		printf("[PARSE]:hit broken string\n");
+		return 0;
+	} else {
+		return (inbuf-origbuf);
+	}
+}
+
+int parse_multiWord(const char *inbuf,int inbufLen,int nWordsMatched,int *pTermDetected)
+{
+	int bytesmatched=0,totalBytes=0,i;
+	int len=inbufLen;
+	int word=0;
+	const char *curPtr=inbuf;
+	
+	while( (len>0) && word < nWordsMatched) {
+		if(((bytesmatched=parse_one_word(curPtr,len))>0)) {
+			totalBytes+=bytesmatched;
+			word++;
+			curPtr+=bytesmatched;
+			len-=bytesmatched;
+			if(word<nWordsMatched) {
+				if(parse_is_terminator(*curPtr)) {
+					*pTermDetected=1;
+					return totalBytes;
+				} else {
+					while(len>0 && parse_is_delimiter(*curPtr)) {
+						curPtr++;
+						len--;
+						totalBytes++;
+					}
+				}
+			}
+		} else {
+			return 0;
+		}
+	}
+
+
+	return totalBytes;
+}

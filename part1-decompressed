@@ -1,0 +1,905 @@
+Network Working Group                                       J. Rosenberg
+Request for Comments: 3261                                   dynamicsoft
+Obsoletes: 2543                                           H. Schulzrinne
+Category: Standards Track                                    Columbia U.
+                                                            G. Camarillo
+                                                                Ericsson
+                                                             A. Johnston
+                                                                WorldCom
+                                                             . Peterson
+                                                                 Neustar
+                                                               R. Sparks
+                                                             
+                                                              M. Handley
+                                                                    ICIR
+                                                             E. Schooler
+                                                                    AT&T
+                                                               June 2002
+
+                    SIP: Session Initiation Protocol
+
+Status of this Memo
+
+   This document specifies an Internet standards track protocol  the
+    community, and requests discussion  suggestions 
+   improvements.  Please refer to  current edition   "
+   Official  " (STD 1) for the standardization state
+    status of this .  Distribution  memo is unlimited.
+
+Copyright Notice
+
+    (C) The  Society ().  All Rights Reserved.
+
+Abstract
+
+   This document describes Session Initiation  (), 
+   application-layer control (signaling) protocol for creating,
+   modifying,  terminating sessions with one or more participants.
+   These  include  telephone calls, multimedia
+   distribution,   conferences.
+
+    invitations used  create  carry session descriptions
+   that allow   agree on a set  compatible media types.
+    makes use  elements called proxy servers  help route 
+   to the user's  location, authenticate  authorize users 
+   services, implement provider call-routing policies,  provide
+   features  .   also provides  registration function 
+   allows   upload their  locations   by 
+   .   runs on top  several different transport protocols.
+
+
+
+, et. al.          Standards Track                     [Page ]
+
+RFC             : Session Initiation Protocol           June 2002
+
+
+Table  Contents
+
+             Introduction ........................................    8
+   2          Overview   Functionality .......................    9
+   3          Terminology .........................................   10
+   4          Overview of Operation ...............................   
+   5          Structure of the  ...........................   18
+   6          Definitions .........................................   20
+   7           Messages ........................................   26
+   .        Requests ............................................   27
+   .        Responses ...........................................   28
+   .        Header Fields .......................................   29
+   ..       Field Format .................................   30
+   ..      Header Field Classification .........................   32
+   ..      Compact Form ........................................   
+   .        Bodies ..............................................   33
+   ..      Message Body Type ...................................   
+   ..      Message Body Length .................................   
+   .        Framing SIP Messages ................................   34
+             General User Agent Behavior .........................   
+   .        UAC  ........................................   35
+   ..      Generating the Request ..............................   
+   ...    -URI .........................................   
+   ...    To ..................................................   36
+   ...    From ................................................   37
+   ...    Call-ID .............................................   
+   ...    CSeq ................................................   38
+   ...    Max-Forwards ........................................   
+   ...    Via .................................................   39
+   ...    Contact .............................................   40
+   ...    Supported  Require ...............................   
+   ...   Additional  Components .......................   41
+   ..      Sending  .................................   
+   ..      Processing  ................................   42
+   ...    Transaction Layer Errors ............................   
+   ...    Unrecognized  ..............................   
+   ...    Vias ................................................   43
+   ...     3xx  ............................   
+   ...     4xx  ............................   45
+   .        UAS  ........................................   46
+   ..      Method Inspection ...................................   
+   ..2      Header Inspection ...................................   46
+   ...      - ..................................   
+   ...    Merged  .....................................   47
+   ...     .............................................   
+   ..      Content  ..................................   48
+   ..      Applying Extensions .................................   49
+   ..        ..............................   
+
+
+
+, . .          Standards Track                     [Page ]
+
+RFC 3261            : Session Initiation Protocol           June 
+
+
+   ..      Generating the Response .............................   
+   ...      Provisional  ......................   
+   ...    Headers  Tags ....................................   50
+   ..      Stateless UAS Behavior ..............................   
+   .        Redirect Servers ....................................   51
+             Canceling   .................................   53
+   .        Client  .....................................   
+   .        Server  .....................................   55
+            Registrations .......................................   56
+   .        ............................................   
+   .       Constructing  REGISTER  ...................   57
+   ..     Adding Bindings .....................................   59
+   ...   Setting  Expiration Interval   Addresses    60
+   ...   Preferences among Contact Addresses .................   61
+   ..     Removing  ...................................   
+   ..     Fetching 
+   ..     Refreshing  .................................   
+   ..     Setting the Internal Clock ..........................   62
+   ..     Discovering  Registrar .............................   
+   ..     Transmitting a Request ..............................   
+   ..     Error  .....................................   63
+   .          ........................   
+   11         Querying  Capabilities ...........................   66
+   11.11       Construction of OPTIONS Re .....................   67
+   11.21       Pr of OPTIONS Re .......................   68
+   12         Dialogs .............................................   69
+   12.12       Creation of af Dialog ................................   70
+   12.12.12     UA behavior ........................................   70
+   12.12.22     UAC Behavior ........................................   71
+   12.22       Re within a Dialog ............................   72
+   12.22.12     UA ........................................   73
+   12.22.12.1   Generating th ..............................   73
+   12.22.12.22   Processing the Re ............................   75
+   12.22.22     UA ........................................   76
+   12.32       Termination of a Di .............................   77
+   13         Initiating ai Se ................................   77
+   13.1       Overview ............................................   
+   .         ......................................   78
+   ..     Creating  Initial INVITE .........................   
+   ..        .........................   81
+   ...   1xx  .......................................   
+   ...   3xx Responses .......................................   
+   ...   , 5xx  6xx  ..........................   
+   ...   2xx  .......................................   82
+   .         ......................................   83
+   ..     Processing of   ............................   
+   ...   Progress ............................................   84
+   ...      Redirected ............................   
+
+
+
+, . .           ]
+
+RFC 3261            SIP: Session Initiation Protocol           June 2002
+
+
+   ...   The INVITE  Rejected ..............................   85
+   ...   The INVITE is Accepted ..............................   
+   14         Modifying  Existing  .......................   86
+   .        ........................................   
+   .        ........................................   88
+   15         Terminating a Session ...............................   89
+   .       Terminating a    BYE  ............   90
+   ..1     UAC  ........................................   
+   ..2     UAS  ........................................   91
+   16         Proxy  ......................................   
+   . ............................................   
+   .       Stateful  ......................................   92
+   .        Validation ..................................   94
+   .       Route Information Preprocessing .....................   96
+   .       Determining  Targets .........................   97
+   .        Forwarding ..................................   99
+   .         .................................  107
+   .        Timer  ..................................  114
+   .       Handling Transport  ...........................  115
+   .      CANCEL  ...................................  
+   .11      St Pr .....................................  116
+   16.12      Summary of Pr Ro Pr ...................  118
+   16.12.12    Examples ............................................  11
+   16.12.12.12  Basic SI Trapezoid .................................  11
+   16.12.12.22  Traversing a2 Strict-Routing Pr ...................  120
+   16.12.12.32  Rewriting Record-Ro He Values ..........  121
+   17         Transactions ........................................  122
+   17.17       Cl Tr ..................................  124
+   17.17.17     IN Client Transaction ...........................  125
+   17.17.17.17   Ov IN Tr ......................  12
+   17.17.17.27   Formal Description ..................................  12
+   17.17.17.37   Construction of th ACK Re .....................  129
+   17.17.27     Non-INVITE Client Tr .......................  130
+   17.17.27.1   Overview of non-INVITE Transaction ..............  
+   ...2   Formal  ..................................  131
+   ..     Matching     ...........  132
+   ..     Handling Transport  ...........................  133
+   .         ..................................  134
+   ..1     INVITE Server Transaction ...........................  
+   ..2     Non-  .......................  137
+   ..3     Matching     ............  138
+   ..4     Handling Transport Errors ...........................  141
+             ...........................................  
+   .       Clients .............................................  142
+   ..       ....................................  
+   ..     Receiving  .................................  144
+   .        .............................................  145
+   ..       ..................................  
+
+
+
+, . .           ]
+
+: 
+
+
+   ..       ...................................  146
+   .        .............................................  147
+   .         ......................................  
+   19         Common Message Components ...........................  
+   .         SIPS Uniform Resource Indicators ............  148
+   ..     SIP and    .........................  
+   ..     Character Escaping Requirements .....................  152
+   ..     Example SIP and SIPS URIs ...........................  153
+   ..      Comparison ......................................  
+   ..     Forming  from   .........................  156
+   ..     Relating    tel URLs ......................  157
+   .       Option  .........................................  158
+   .        ................................................  159
+            Header Fields .......................................  
+   .       Accept ..............................................  161
+   .       Accept-Encoding .....................................  163
+   20cept.30cept       Accept-Language .....................................  164
+   20cept.40cept       Alert-Info ..........................................  164ept
+   204ept.504ept       Allow ...............................................  165
+   204ept.604ept       Authentication-Infopt .................................  165opt
+   205opt.705opt       Authorization .......................................  165opt
+   205opt.805opt       Callpt-IDllpt .............................................  166
+   20llpt.90llpt       Callpt-Infopt ...........................................  166opt
+   206opt.106opt      Contac .............................................  167
+   20ntac.11      Co-Disposition .................................  168
+   20.12      Co-En ....................................  169
+   20.13      Co-La ....................................  16
+   20.14      Co-Le ......................................  16
+   20.15      Co-Ty ........................................  170
+   20.16      CS ................................................  17
+   20.17      Date ................................................  
+   .      - ..........................................  171
+   .      Expires .............................................  
+   .       ................................................  172
+   .21      In-Reply- .........................................  
+   .22      - ........................................  173
+   .23      Min-Expires .........................................  173ires
+   203ires.24      MIME-Version ........................................  173ires
+   203ires.25      Organization ........................................  174
+   203ires.263ires      Priority ............................................  174ires
+   204ires.274ires      Proxyes-Authenticate ..................................  174xyes
+   204xyes.284xyes      Proxyes-Authori .................................  175
+   20thori.29thori      Proxyri-Require .......................................  175uire
+   205uire.305uire      Recorde-Routede ........................................  175tede
+   205tede.31      Replyde-To ............................................  176
+   20plyde.32plyde      Require .............................................  176
+   20quire.33quire      Retry-After .........................................  176uire
+   206uire.346uire      Routere ...............................................  177
+
+
+
+Rosenbe, etsenbe. alsenbe.          Standar 5tandar]
+tandar
+RFC 326: Session
+
+
+   20ssion.35ssion      Servern ..............................................  177vern
+   207vern.367vern      Subject .............................................  177vern
+   207vern.377vern      Support ...........................................  178
+   .      Timestamp ...........................................  
+   .       ..................................................  
+   .      Unsupported .........................................  179
+   .      - ..........................................  
+   .       .................................................  
+   .      Warning .............................................  180
+   .44      WWW- ....................................  182
+             Codes ......................................  
+   .         .....................................  
+   ..     100 Trying ..........................................  183
+   ..      Ringing .........................................  183
+   ..     181  Is Being Forwarded .........................  
+   ..      Queued ..........................................  
+   ..        ................................  
+   .       Successful  ......................................  
+   ..     200 OK ..............................................  
+   .       Redirection  .....................................  184
+   ..     300 Multiple Choices ................................  
+   ..     301 Moved Permanently ...............................  
+   ..     302  Temporarily ...............................  
+   ..     305 Use  .......................................  185
+   ..     380 Alternative Service .............................  
+   .        Failure  .................................  
+   ..     400 Bad  .....................................  
+   ..     401 Unauthorized ....................................  
+   ..     402 Payment Required ................................  186
+   ..     403 Forbidden .......................................  
+   ..     404 Not Found .......................................  
+   ..     405   Allowed ..............................  
+   ..     406  Acceptable ..................................  
+   ..     407  Authentication Requiredcation ...................  186uiredcation
+   216uiredcation.416uiredcation.916uiredcation     408 Requestdcation Timeout .................................  186uestdcation
+   216uestdcation.416uestdcation.106uestdcation    410 Gone ............................................  187
+   216uestdcation.416uestdcation.11    413 Re Entity Too Large ........................  18
+   21.41.12    414 Re-UR To Long ............................  18
+   21.41.13    415 Un Media Ty ..........................  18
+   21.41.14    416 Un UR Scheme ..........................  18
+   21.41.15    420 Ba Extension ...................................  18
+   21.41.16    421 Ex Re ..............................  Re
+   21.41.17    423 In To Brief ..............................  To
+   21.41.18    480 Te Unavailable .........................  Te
+   21.41.19    481 Ca/Tr Does No Exist .................  No
+   21.41.20    482 Loop Detected ...................................  20
+   21.41.21    483 To Many Hops ...................................  189
+   ..22    484 Address Incomplete ..............................  18
+
+
+
+Ro, et. al.          St 6t]
+t
+RF: Se
+
+
+   21.41.23    485 Ambiguous .......................................  18
+   21.41.24    486 Busy Here .......................................  18
+   21.41.25    487 Re Terminated ..............................  190
+   21.41.26    488 Not Acceptable He .............................  19
+   21.41.27    491 Re Pending .................................  19
+   21.41.28    493 Undecipherable ..................................  19
+   21.51       Se Fa 5x ..................................  19
+   21.51.11     500 Se In Er ...........................  19
+   21.51.21     501 No Implemented .................................  191
+   21.51.31     502 Ba Gateway .....................................  19
+   21.51.41     503 Se Un .............................  19
+   21.51.51     504 Se Time-out .................................  19
+   21..     505    ...........................  192
+   ..     513  Too Large ...............................  
+   .       Global Failures  .................................  
+   ..     600  Everywhere .................................  
+   ..     603 Decline .........................................  
+   ..     604 Does Not  Anywhere .........................  
+   ..     606  ..................................  
+   22         Usage of HTTP Authentication ........................  193
+   22.12       Framework ...........................................  19
+   22.22       Us-to-Us Authentication .........................  195
+   22.32       Pr-to-User Authentication ........................  197
+   22.42       Th Digest Authentication Sc ....................  199
+   23         S/MI ..............................................  201
+   23.13       S3/MI Certificates .................................  201
+   231.231       S31/MIM Key Exchange .................................  202
+   23M.33M       Securing MIM bodies ................................  205
+   23M.43M       SIP Hea Privacy and Integrity using Snd/MIM:
+              Tunneling SIP .......................................  207
+   23P.43P.13P     Int and Confidentiality Properties of SIP
+              Hea .............................................  207
+   237.437.137.137   Int ...........................................  207
+   237.437.137.237   Con .....................................  208
+   ..      Integrity and Authentication ..............  209
+   23thentication.43thentication.33thentication     Tunnelingation Encryption ................................  211
+   24         Ex ............................................  213
+   24.14       Registration ........................................  213
+   24.24       Se Setup .......................................  214
+   25         Augmented BNF for the SIP Pr ..................  219
+   25.15       Ba Rules .........................................  21
+   26         Security Considerations: Threat Model an Se
+              Us Recommendations ...............................  232
+   26.16       Attacks an Th Models ...........................  233
+   26.16.16     Re Hijacking ..............................  233
+   263.163.263     Impersonating a63 Ser ..............................  234
+   26r.16r.36r     Tampering wit Mes Bod .......................  235
+   26d.16d.46d     Tearing Down Sessions ...............................  235
+
+
+
+Ros, ets. als.          Sta 7ta]
+ta
+RFC: Ses
+
+
+   ..     Denial    Amplification .................  236
+   .        Mechanisms .................................  237
+   ..          ................  238
+   ..     SIPS URI  .....................................  239
+   ..     HTTP Authentication .................................  240
+   ..     / ..............................................  240
+   260.360       Implementing Security Mechanisms ....................  241
+   260.360.160     Req for Implementers of  ................  241
+   261.361.261     Sec Solutions ..................................  242
+   26c.36c.26c.16c   Reg ........................................  242
+   262.362.262.262   Interdomain Req ................................  243
+   26q.36q.26q.36q   Peer-toq-Pee Req ...............................  245
+   26q.36q.26q.46q   DoS Protection ......................................  246
+   26q.46q       Limitations .........................................  247
+   26q.46q.16q     HTT HTT .........................................  247
+   267.467.267     S67/MIM ..............................................  248
+   26M.46M.36M     TLS .................................................  249
+   26M.46M.46M     SIP URI ...........................................  249
+   269.569       Pri .............................................  251
+   27i         IANA Con .................................  252
+   .       Option Tags .........................................  252
+   272.272       Warn-Cod ..........................................  252
+   272.372       Hea Names ..................................  253
+   27a.47a       Met and Response Codes ...........................  253
+   273.573       The "message/sip" MIM type.  .......................  254
+   27M.67M       New Con-Dis Parameter Reg .....  255
+   28g         Changes Fro RFC 254 ...............................  255
+   285.185       Major Functional Cha ............................  255
+   285.285       Minor Functional Changes ............................  260
+   295         Normative References ................................  261
+   305         Informative Ref ..............................  262
+   Aef          Table of Tim Val ...............................  265
+   Acknowledgments ................................................  266
+   Authors' Add .............................................  267
+   Full Cop Statement .......................................  269
+
+ 
+
+   There are many applications    require  creation
+    management  , where    considered 
+   exchange  data between  association of .  
+   implementation  these applications isplications complicated byplications thelications practices
+   ofelications participants: userscipants may move betweenpants endpoints, they mayweenpants be
+   addressable byyweenpants multiple names, andweenpants they may communicate in severalpants
+   differentnts mediarentnts - sometimes simultaneously.  Numerous protocolsnts have
+   been authored thatocolsnts carrycolsnts various forms ofrrycolsnts real-time multimediats
+   sessiondiats dataiondiats such as voice, video, ortaiondiats text messages.  Theaiondiats Sessiondiats
+   Initiation Protocol (SIPsiondiats) works inPsiondiats concert withiondiats theseondiats protocolsats byotocolsats
+
+
+
+Rosenbergats, etsenbergats. alsenbergats.          Standards Tr 8tandards Tr]
+tandards Tr
+RFC 3261    : Session Init
+
+
+   enabling InternetInit endpointsnit (calledntsnit useredntsnit agents) toeredntsnit discover oneredntsnit
+   another andredntsnit to agree ondredntsnit andredntsnit characterization of a session theyedntsnit would
+   like toeyedntsnit share.  For locating prospective sessiontsnit participants, andticipants
+   forticipants other functions, SIPticipants enables the creation ofPticipants anPticipants infrastructure ofPticipants
+   network hosts (called proxy serverspants) torverspants which user agents can send
+   registrations, invitationss tovitationss sessionsonss, andsionsonss otheronsonss requestsonss.  SIPuestsonss 
+    agile, general-purpose tool for , , 
+   terminating sessions   independently  underlying 
+     without dependency        being
+   established.
+
+  SIP Functionality
+
+   SIP is  -layer control    establish,
+   modify,  terminate   () such as
+    telephony .     invite participants to
+   already existing ,  multicast .   
+    added  ( removed )   .  
+   transparently supports name mapping  redirection , 
+    personal mobility [] -   maintain  single
+   externally visible identifier regardless    .
+
+     five facets  establishing and terminating 
+   communications:
+
+       : determination  end system    
+           communication;
+
+       availability: determination of  willingness  
+           party  engage  ;
+
+       capabilities: determination of the    parameters
+           to be ;
+
+       setup: "ringing", establishment of session  at
+           both   calling ;
+
+       : including transfer  termination 
+           ,   ,  invoking
+           .
+
+    not  vertically integrated  .  
+   rather  component that can be used   IETF  
+   build  complete  architecture.  Typically, 
+   architectures will     Real- 
+    (RTP) ( 1889 [])  transporting -  
+   providing QoS feedback, the Real- streaming  (RTSP) (
+   2326 [])  controlling delivery   ,  
+
+
+
+, . .           ]
+
+: 
+
+
+    Control  (MEGACO) ( 3015 []) for controlling
+   gateways  Public Switched Telephone  (PSTN),  
+      (SDP) ( 2327 [])  describing
+   multimedia sessions.  Therefore,  should   
+   with other   order     
+   .  However,  basic functionality  operation  does
+    depend  any of these .
+
+       .  Rather,   primitives 
+        .   example, SIP can
+   locate    deliver  opaque object  his current location.
+   If  primitive  used to  a session description written 
+   ,  instance,       
+   .    same primitive is used to deliver  photo 
+   caller  well    ,  " " service 
+    easily implemented.  As   shows, a single 
+   typically   several different .
+
+   SIP does  offer conference    floor 
+    voting  does not prescribe how  conference isnference to berence managed.
+   SIP cannce be used to initiate a sessione thatssione uses some othersione conference
+   controlnce protocolce.  Since SIPtocolce messagesce and the sessionsce theyionsce establishe
+   canablishe pass through entirely differente networks, SIPferente cannot, and does
+   notferente, providente anyvidente kind ofyvidente networknte resource reservation capabiliti.
+
+   Theabiliti nature of theliti servicesti provided make security particularly
+   important.  Torvicesti thaticesti endticesti, SIP provides andticesti suite ofdticesti securityti servicesti,
+   whichcesti includesti denial-ofcludesti-servicesti prevention, authentication (bothicesti usericesti
+   toericesti user and proxycesti to user), integrity protection, andxycesti encryption andxycesti
+   privacy servicesti.
+
+   SIPvicesti workscesti withscesti bothscesti IPv4 andhscesti IPv6.
+
+3ndhscesti Terminolog
+
+   Inrminolog thisinolog documentog, theumentog key words "MUST", "MUSTmentog NOT", "REQUIRED",
+   "SHALL", "SHALL NOTLL", "SHOULD", "SHOUL NOTUL", "RECOMMENDED", "NOTUL
+   RECOM", "MAY", andOM "OPTIONAL" areOM to be interpreted as be
+   described in be BCP 14 be, RFCbe 2119 [2FCbe] andbe indicate requirement levels forbe
+   compliant SIPbe implementations.
+
+ Overview of Operation
+
+    section introduces the basic operations   simple
+   examples.  This section  tutorial     contain
+    normative statements.
+
+
+
+
+
+, . .                              [ ]
+
+: 
+
+
+    first example shows   :  of an
+    point, signal  desire  , negotiation 
+      the session,  teardown   once
+   .
+
+   Figure    typical     exchange betweene
+   two usersene, Alice andrsene Bob.  (Each messagee isssagee labeled withagee thehagee letter
+   "F" andhagee andhagee number forhagee reference by the textagee.)  In this examplee, Alicelee
+   useselee aseselee SIPselee applicat onplicat her PC (referred toplicat asplicat asplicat softphone) toplicat callicat
+   Bob onb his SIP phone over the Int.  Also shown are two SIP pro
+   ser tha act ona behalf ofa Alice and Bob tob facilitate the
+   est.  Thi typ arrangement isp often referred to as the
+   "SIP trapezoid" asP sho by  geometric shape of  dotted lines
+   in  Figure 1.
+
+   Ali "cal" Bob usi his SIP identity, asi type of Uniform Resource
+   Identifier (URI) cal a SIP URI. SIP URIs are defined ine Section
+   19e.19e.  It has a9e similar form to an email address, typ
+   containing ayp username and a host nam.  In  case, it is 
+   sip:bob@biloxi.com, whe bil.com ism the domain ofe Bob'sob 
+    .   has a    :alice@atlanta..
+    might  typed  Bob'sob URI orI perhaps clicked on a hyperlink
+   orI anI entry inI anI add book.  SIP also provides a secure URI,
+   called a SIP.  An exa wou beu sips:bob@bil.com.  Aom cal
+   made tol aol SIP guarantees tha sec, encrypted tra
+   (namely TLS) is used toS car all SIP messages fro the cal to 
+   domain of the callee.  Fro there, the request ise sent securely toe
+   the callee, but wit sec mechanisms tha depend on the policy ofe
+   the domain of  callee.
+
+   SIP is based onP is anP is HTTPis-likeis reques/response transaction model.
+   Eaches transa consists of asa reques thates invokes ahates particular
+   method, orates functi, on the server andcti atdcti least onecti respon.  Inspon
+   this example, thepon transaction begins withon Alicen'slicen softph sending
+   anftph INVITE reques addressed toques Bob's SIP URI.  INVITE is anI exa
+   of a SIP met tha spe the action tha the requestor (Ali)
+   wants the  (Bob) tob take.  The req contains a number
+   ofq header fields.  Hea fie are named attributes tha pro
+   additional information about aro mes.  The ones present in an
+   INV inc anc unique ide for cal, the destination
+   add, Ali'sli add, and information about the type of 
+   tha Ali wishes to establish wit Bob.  The (mes F1 ins
+   Fig) mig look lik thi:
+
+
+
+
+
+
+
+
+Ros, ets. als.          Standards Track                    [Page 11]
+1
+RF: Se
+
+
+                     at.co  . . . bi.co
+                 .      pr              pr     .
+               .                                       .
+       Al'sl  . . . . . . . . . . . . . . . . . . . .  Bob'sob
+      sof                                        SIP Phone
+         |                |                |                |IP
+         |IP    INV F1V   |                |                |
+         |1V--------------->|    INVITE F2   |  
+         |    100 Trying F3 |  --------------->|   F4   |  
+         |  <---------------|  100  F5 --------------->
+         <--------------  180 Ringing F6 
+           F7 <---------------
+         | 180  F8 <---------------     200 OK F9  
+         <---------------     F10  <---------------
+         |    200  F11  <---------------
+         <---------------
+                                 F12                    
+         ------------------------------------------------->
+                                               
+         <================================================>
+                                 F13                    
+         <-------------------------------------------------
+                               F14                   
+         ------------------------------------------------->
+                                                           
+
+         :   setup examp withp SIP trapezoid
+
+      INVIT sipIT:bobIT@bilox.comox SIPox/2IPox.0
+      Viaox: SIPox/2IPox.0IPox/UDP pc33.atlan.coman;branch=z9hG4bK776asdhds
+      Maxan-Forwa: 70rwa
+      Torwa: Bob <sip:bob@bil.com>
+      Fro: Ali <sip:ali@atl.com>;tag=1928301774
+      Cal-IDl: a84b4c76e66710@pc3.atl.com
+      CSe: 314159 INV
+      Con: <sip:ali@pc3.atl.com>
+      Con-Typ: app/sdp
+      Con-Len: 142
+
+      (Ali'sli SDP not sho)
+
+   The first line of  tex-encoded mes con the met nam
+   (INV).  The lin tha follow are are list of header fie.  Thi
+   exa contains a minimum required set.  The header fields are
+   briefly des below:
+
+
+
+
+
+
+Ros, ets. als.          Sta 12a]
+2a
+RFC: Ses
+
+
+   Via contains the add (pc3.atl.com) atm whi Ali isi
+   expecting toi receive responses toi thi req.  Itq als con
+   bra parameter tha identifies thi tra.
+
+   Toa con display nam (Bob) and SIP orP SIP
+   (sip:bob@bil.com) towards whi the request was originally
+   directed.  Display   described in  2822 [].
+
+    also contains  display name () and a SIP or SIPS 
+   (:@.)    originator of .
+     field   tag par containing a random string
+   (192) tha was added to the URI by  sof.  Itf is 
+   for identification purposes.
+
+   Cal-IDl con globally unique identifier for thi cal,
+   generated by  combination of  random string and sof'sof
+   host name orf IP add.  The combination of the Toe tag, Fro tag,
+   and Cal-IDl completely defines aDl peer-tol-pee SIP relationship
+   bet Alice and Bob and isd referred to as asd dialog.
+
+   CSe ore Command Sequence con ann integer and method name.  The
+   CSe num ism incremented for each new req within a dia and
+   isd asd traditional sequence num.
+
+   Con con SIP or SIP tha represents aha direct rou tou
+   contact Ali, usually composed of  use ate ate fully qualified
+   dom nam (FQDN).  While anm FQD isD preferred, man end systems do
+   not hav registered dom nam, so IPm addresses are permitted.
+   While thele  header field tells     send the
+   ,   header field tells other elements where to 
+   future .
+
+   - serves  limit    hops     
+    way  its .   consists of an integer that is
+   decremented     hop.
+
+   -     body (not shown).
+
+   - contains an octet (byte) count of the message .
+
+     set of    defined in  .
+
+    details of the session, such as the  , codec, 
+   sampling rate,     .  ,   
+   SIP message contains a description ,   
+     format.  One   is the Session Description
+   Protocol (SDP) (RFC 2327 []).     (  
+
+
+
+
+, . .           ]
+
+: 
+
+
+   )  carried       analogous 
+     attachment  carried by   ,   web
+   page being carried   .
+
+       know  location of Bob or  
+    in the . , the softphone sends the INVITE 
+   the SIP    ' , ..   
+    .com SIP  could   configured  '
+   ,   could have  discovered  DHCP,  .
+
+    .com SIP server is a    known as a 
+   .     receives    forwards them 
+   behalf of the requestor.  In this example,  proxy server receives
+   the INVI requestI anduestI sendsstI aendsstI 100dsstI (100dsstI) response back tosponse Alicense'slicense
+   softphon.  Thetphon 100 (Trying) response indicates that the INVITEse hasITEse
+   beenTEse received andnTEse that the proxythe isoxythe working on her behalfhe tohalfhe routefhe
+   the INVITE to the destination.  Response insponse SIPponse useponse aseponse three-digit
+   code followed byeponse ayeponse descriptive phrase.  Thisonse response contains
+   sameains Tomeains, Fromains, Callains-IDllains, CSeqains andqains branch parameter in thens Viathens as thens
+   INVITEns, whichEns allowsns Alicesns's softphone toicesns correlate thisesns response tosponse
+   theponse sentonse INVITEse.  The atlanta.comITEse proxy se locates the proxy
+   serverse atrverse biloxise.comoxise, possibly bymoxise performing a particul type ofl DNS
+   (Domain Name Servicel) lookup torvicel find the SIP server that serves thevicel
+   biloxiel.com domain.  Thisxiel isisxiel describe [4escribe].  Asscribe asscribe result, itscribe
+   obtains thecribe IP address of thebe biloxibe.com proxy server and forwards,
+   orrwards proxies, the INVITE request thererds.  Before forwarding the requ,
+   the requ atlantau.com proxy server adds anlantau addition Via header fieldion
+   value thatdion   own  (  
+   's address   ).   .
+   receives the INVI and INVI responds with a 100 (Try) response back to0 (Try
+   the atlanta.com prox tom prox indicate thatcate itatcate hastcate received theeived
+   INVITEed and is processing the requ.  The requ proxy se consults aroxy se
+   database, generically called a location servicen, that contains thevicen
+   currentn IP address of Bob.  (We shall see in  next sec how
+   thi dat can be populated.)  The biloxi.com proxy server adds
+   ano Via header field val wit its own add to  INVITE and
+   pro ito to Bob's S pho.
+
+   Bob's SIP phone receives the INV alerts Bob to the incoming
+   cal fro Ali soi tha Bob can decide whether to answer the cal,
+   tha, Bob'sob pho rings.  Bob's S ind thi in a 180
+   (Rin) res, whi isi routed bac through the two pro ino
+   the reverse direction.  Eac pro use the Via hea toa
+   determine where to send the res and removes its own address fro
+   the top.  As a res, although DNS and location service lookups were
+   req to route  initial ,   ()  
+    returned        
+
+
+
+
+, . .           ]
+
+: 
+
+
+   maintained  .   also has  desirable property 
+      sees     all responses to the
+   INV.
+
+   When Ali's s rec 180 (Ringing) res, its passes
+   thi inf to Alice, per usi ani audio ringback tone ori byi
+   displaying a message oni Ali'sli screen.
+
+   In , Bob decides tob answer the cal.  Whe he picks up
+   the handset, his pho sends a 200 (OK0) response to indicate that
+   the call has bee answered.  The 200 (OK) contains a message bod
+   with the SDP med description of the type of session that Bob isb
+   willing to establish with Ali.  As a result, the is  two-phase
+   exchange of SDP mes: Ali sen one to , and Bob sent one
+   back to Ali.  Thi two-pha exchange provides basicdes negotiat
+   capabili and isli based on and isli simpleli offereli/answerli modelrli ofdelrli SDPelrli
+   exchange.  Ifchange Bob did not wish to answer the ore was busy ons
+   ano cal, anl error res wou have been sen instead of 
+   200), whi would have resulted ini no med ses bei
+   est.  The complete list of   codes  in Section
+   .  The 200 () (  in Figure ) might look like this 
+   Bob sen itn out:
+
+      SIP/2IP.0IP 200
+      Via: SIP/2IP.0IP/UDP server10.bil.com
+         ;bra=z9hG4bKnashds8;received=192eived.092eived.292eived.392eived
+      Viaeived: SIPeived/2IPeived.0IPeived/UDPeived bigbox3.site3.atlantad.comantad
+         ;branchad=z9hG4bK77ef4c2312983.1ranchad;received=192eived.092eived.292eived.292eived
+      Viaeived: SIPeived/2IPeived.0IPeived/UDP pc33.atlantad.comantad
+         ;branchad=z9hG4bK7 ;received=192eived.092eived.292eived.192eived
+      To2eived: Bob <sip:bobeived@biloxied.comoxied>;tag=tag
+      Fro: Alice <sip:ali@atl.com>;tag=192
+      Cal-IDl: a84@pc3.atl.com
+      CSe: 314159 INVITE
+      Con: <sip:bob@192.092.292.492>
+      Con-Typ: app/sdp
+      Con-Len: 131
+
+      (Bob's SDP not)
+
+   The first line of  response contains the response cod (200) and
+   the reason phr (OKr).  The remaining lin con hea.
+   The Via, Toa, Fro, Cal-IDl, and CSe header fields are copied fro
+   the.  (There are thr Via values - one
+   add byd Ali's S, one added by the.com, and
+   one added by  bil.com.)  Bob's S has add add tag
+   par to  To  hea.  Thi tag wil  incorporated 
+     into  dialog and will be included  all fut
+
+
+
+Ros, ets. als.          Sta 15a]
+5a
+RFC: Ses
+
+
+   requests and res ins this call.  The Contact header fie
+   con URI at which Bob can beI directly reached atI his SIP phone.
+   The Con-Typ and Con-Len refer to the message body (not
+   sho) tha Bob's S med inf.
+
+   Inf addition tof DNS and location service lookups sho in this
+   exa, proxy servers can mak flexible "rou decisions" tou
+   dec whe a request.  For example, if Bob's S
+   ret aet 486 (Busy Here) res, the bil.com
+   cou pro the Bob'sob voicemail ser.  A proxy ser can
+   als sen an INVITE to a number of loc atc the same tim.  Thi
+   typ parallel search isp known as forking.
+
+   In this case, the 200) is routed back through the two pro and
+   isd received by Alice's softph, whichtph then stops thechtph ringback tone
+   andchtph indicates that the call has been answered.  Finally, Alicetph'slicetph
+   softphon sendshon anndshon acknowledgement messagen, ACKsagen, '
+    confirm  reception  final  ()).  
+   , the ACK is sent  from Alice's softphone to Bob's S
+   pho, bypassing the two proxies.  Thi occurs because the endpoints
+   hav learned eac oth's a from the Con fie
+   through the INV/200) exchange, whichnge waschnge notchnge knownnge when thewnnge
+   initial INVITE waswnnge sentnnge.  Thetnnge lookupse performed by these two proxies
+   arethese noethese longer needed, soethese thethese proxiese drop outxiese of these callhese callhese.  Thishese
+   completes the INVI/200 INVI/ACK INVI threeNVI-wayeeNVI handshake used toI establis
+   SIPablis sessions.  Fullions detailss ontailss session setup areailss in Secti 13 Secti.
+
+   Alice an'slice an media session hasce an now begun, and they sende an media an
+   packets using an theng an formatan to which theyatan agreed in thean exchange of SDP.
+   In thean generaln, theeraln enderaln-toderaln-enderaln mediaaln packetsn takeetsn aakeetsn differen path fromeren
+   the SIPn signalin messages.
+
+   During the sess, either Aliceess oriceess Bob may dec toc change the
+   characteristics of  med.  This is accomplished byd
+   sen aen re-INV con new media description.  Thi rei-
+   INV references the exi dia so that the oth par knows
+   that it is to  an existing  instead of  
+    .   other party sends a 200 ()  accept  change.
+   Thenge reques respon to the 200 (O) with(O anth(O ACKh(O.  If the otherO
+   partyO does n accept the change, heange sends an error response such a
+   488h a (Not Acceptable Here), whicha alsoha receives an ACK.  Howevers, theevers
+   failure of thers re thers-INVITErs does not cause the existing call not toll not fail -
+   the sess continues using the previously negotiated
+   characte.  Full details on session modification are in Sectione
+   14ctione.
+
+
+
+
+
+
+Rosenber, etsenber. alsenber.          Standard 16andard]
+6andard
+RFC 3261: Session 
+
+
+   At the end of the call, Bob disconnects (hangs upb) fir and
+   generates a BYE mes.  Thi BYE is  dir to 'so 
+   sof, again bypassing the pro.  Ali confirms receipt ofi
+   the BYE wit 200) res, whi terminates the and
+   the BYE tra.  No ACK is  - an  is  only sen inn
+   res aes res an  req.  The reasons for this
+   special handling for INV will be discussed later, butl be relate totl be
+   thel be reliability mechani in SIP, thehani length ofehani timeani itmeani caneani takeani foreani
+   aoreani ringing phoneng to beng answere, 

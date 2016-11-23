@@ -1,0 +1,222 @@
+#include <string.h>
+
+#include "encode.h"
+#include "hash.h"
+ 
+/* encode_newHashEntry: encodes a newHashTLV into the outbuf
+* Returns the number of bytes encoded into outbuf
+*/
+int	encode_newHashEntry(uchar *outBuf, int outBufLen,
+	long hashId, const char *pPhrase, int phraseLen)
+{
+
+	newHashTLV *tlv = (newHashTLV *)outBuf;
+	int numBytesEncoded = sizeof(newHashTLV)+phraseLen;
+
+	if (outBufLen < numBytesEncoded ) {
+		return (ENCODE_ERR_NOBUF);
+	}
+	tlv->type = HASH_NEW_ENTRY_TLV;
+
+	/* length in TLV does not include the length of
+		'type' and 'len' fields
+	*/
+	tlv->len = numBytesEncoded-2;
+
+	/*encode 3 byte hashId in network byte order */
+	tlv->hashId[0] = HASHID_MSBYTE(hashId);
+	tlv->hashId[1] = HASHID_MIDBYTE(hashId);
+	tlv->hashId[2] = HASHID_LSBYTE(hashId);
+	memcpy(tlv->key, pPhrase, phraseLen);
+
+	return numBytesEncoded;
+}
+
+/* encode_hashEntry: encodes a hashTLV into the outbuf
+* Returns the number of bytes encoded into outbuf
+*/
+int	encode_hashEntry(uchar *outBuf, int outBufLen,
+	long hashId)
+{
+
+	hashTLV *tlv = (hashTLV *)outBuf;
+	int numBytesEncoded = sizeof(hashTLV);
+
+	if (outBufLen < numBytesEncoded ) {
+		return (ENCODE_ERR_NOBUF);
+	}
+	tlv->type = HASH_ENTRY_TLV;
+
+	/* length in TLV does not include the length of
+		'type' and 'len' fields
+	*/
+	tlv->len = numBytesEncoded-2;
+
+	/*encode 3 byte hashId in network byte order */
+	tlv->hashId[0] = HASHID_MSBYTE(hashId);
+	tlv->hashId[1] = HASHID_MIDBYTE(hashId);
+	tlv->hashId[2] = HASHID_LSBYTE(hashId);
+	
+	return numBytesEncoded;
+}
+
+int encode_microHashEntry(uchar *outBuf, int outBufLen, long hashId)
+{
+	microHashTLV *tlv = (microHashTLV *)outBuf;
+	int numBytesEncoded = sizeof(microHashTLV);
+
+	if (outBufLen < numBytesEncoded ) {
+		return (ENCODE_ERR_NOBUF);
+	}
+	tlv->type = MICRO_HASH_ENTRY;
+
+	/* length in TLV does not include the length of
+		'type' and 'len' fields
+	*/
+	tlv->len = numBytesEncoded-2;
+
+	/*encode 3 byte hashId in network byte order */
+	tlv->hashId[0] = HASHID_MIDBYTE(hashId);
+
+	
+	return numBytesEncoded;
+
+}
+
+int encode_miniHashEntry(uchar *outBuf, int outBufLen, long hashId)
+{
+	miniHashTLV *tlv = (miniHashTLV *)outBuf;
+	int numBytesEncoded = sizeof(miniHashTLV);
+
+	if (outBufLen < numBytesEncoded ) {
+		return (ENCODE_ERR_NOBUF);
+	}
+	tlv->type = MINI_HASH_ENTRY;
+
+	/* length in TLV does not include the length of
+		'type' and 'len' fields
+	*/
+	tlv->len = numBytesEncoded-2;
+
+	/*encode 3 byte hashId in network byte order */
+	tlv->hashId[0] = HASHID_MSBYTE(hashId);
+	tlv->hashId[1] = HASHID_MIDBYTE(hashId);
+
+	
+	return numBytesEncoded;
+
+}
+
+int	encode_newMicroHashEntry(uchar *outBuf, int outBufLen,
+	long hashId, const char *pPhrase, int phraseLen)
+{
+
+	microNewHashTLV *tlv = (microNewHashTLV *)outBuf;
+	int numBytesEncoded = sizeof(microNewHashTLV)+phraseLen;
+
+	if (outBufLen < numBytesEncoded ) {
+		return (ENCODE_ERR_NOBUF);
+	}
+	tlv->type = MICRO_HASH_NEW_ENTRY;
+
+	/* length in TLV does not include the length of
+		'type' and 'len' fields
+	*/
+	tlv->len = numBytesEncoded-2;
+
+	/*encode 3 byte hashId in network byte order */
+	tlv->hashId[0] = HASHID_MIDBYTE(hashId);
+	
+	memcpy(tlv->key, pPhrase, phraseLen);
+
+	return numBytesEncoded;
+}
+
+
+int	encode_newMiniHashEntry(uchar *outBuf, int outBufLen,
+	long hashId, const char *pPhrase, int phraseLen)
+{
+
+	miniNewHashTLV *tlv = (miniNewHashTLV *)outBuf;
+	int numBytesEncoded = sizeof(miniNewHashTLV)+phraseLen;
+
+	if (outBufLen < numBytesEncoded ) {
+		return (ENCODE_ERR_NOBUF);
+	}
+	tlv->type = MINI_HASH_NEW_ENTRY;
+
+	/* length in TLV does not include the length of
+		'type' and 'len' fields
+	*/
+	tlv->len = numBytesEncoded-2;
+
+	/*encode 3 byte hashId in network byte order */
+	tlv->hashId[0] = HASHID_MSBYTE(hashId);
+	tlv->hashId[1] = HASHID_MIDBYTE(hashId);
+	
+	memcpy(tlv->key, pPhrase, phraseLen);
+
+	return numBytesEncoded;
+}
+
+
+int encode(uchar *outBuf, int outBufLen,
+	const char *pPhrase, int phraseLen, int hitCount, long hashId)
+{
+	int numBytesEncoded=0;
+	int bucketId=HASHID_TO_BUCKET(hashId); 
+	int subIndex=HASHID_TO_SUBINDEX(hashId); 
+
+	if(outBufLen>0) {	
+		if(phraseLen<=3) {
+			numBytesEncoded=encode_raw(outBuf,outBufLen,pPhrase,phraseLen);
+		}	
+		if( hitCount >1 ) {
+			 /* entry is being re-hit; the dictionary data
+				would have been already sent for this; just
+				encode hashId this time
+			*/
+			if (subIndex==0) {
+				if (bucketId < 255 ) {
+					numBytesEncoded = encode_microHashEntry(outBuf, outBufLen, hashId);
+				} else {
+					numBytesEncoded= encode_miniHashEntry(outBuf, outBufLen, hashId);
+				}
+			} else {
+				numBytesEncoded = encode_hashEntry(outBuf, outBufLen, hashId);
+			}
+		} else if ( hitCount == 1 ) {
+			/* this dictonary entry is being hit for the
+				first time Send the all the data along
+				with their hashId
+			*/
+			if (subIndex==0) {
+				if (bucketId < 255 ) {
+					numBytesEncoded = encode_newMicroHashEntry(outBuf, outBufLen, hashId, pPhrase, phraseLen);
+				} else {
+					numBytesEncoded= encode_newMiniHashEntry(outBuf, outBufLen, hashId, pPhrase, phraseLen);
+				}
+			} else {
+			numBytesEncoded = encode_newHashEntry(outBuf, outBufLen, hashId, pPhrase, phraseLen);
+			}
+		} else {
+			return 0;
+		}
+	}
+	return numBytesEncoded;
+	
+}
+
+int encode_ws(char *curOutPtr,int OutBufLen,const char *curInPtr)
+{	
+	int numBytesEncoded=0;
+	/*TODO:if outBuf is not big enough to hold all whitespaces what happens?*/
+	if(OutBufLen>0) {
+		*curOutPtr=*curInPtr;
+		numBytesEncoded++;
+	}
+	return numBytesEncoded;
+}
+
+		
+		
